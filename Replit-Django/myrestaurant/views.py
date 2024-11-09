@@ -1,19 +1,26 @@
 from django.shortcuts import render, redirect
-from .models import Menu  # Import the Menu model
+from django.http import JsonResponse
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+from .models import Menu
 from .forms import NewLoginForm
+from django.contrib.auth.models import User
+from django.contrib import messages
+
 
 def index(request):
-    # Fetch dishes categorized into Appetizers, Main Courses, and Desserts
     appetizers = Menu.objects.filter(category='Appetizers')
     main_courses = Menu.objects.filter(category='Main Courses')
     desserts = Menu.objects.filter(category='Desserts')
-
+    form = NewLoginForm()
     return render(request, 'index.html', {
         "appetizers": appetizers,
         "main_courses": main_courses,
-        "desserts": desserts
+        "desserts": desserts,
+        "form": form
     })
 
+# @login_required
 def add_dish(request):
     appetizers = Menu.objects.filter(category='Appetizers')
     main_courses = Menu.objects.filter(category='Main Courses')
@@ -27,72 +34,47 @@ def add_dish(request):
         if n and d and p and c:
             menu = Menu(name=n, description=d, price=p, category=c)
             menu.save()
-            # Fetch dishes categorized into Appetizers, Main Courses, and Desserts
-
-            return render(request,'add_dish.html',{"appetizers": appetizers,"main_courses": main_courses,"desserts": desserts})
-        else:
-            pass
-
-    return render(request, 'add_dish.html',{"appetizers": appetizers,"main_courses": main_courses,"desserts": desserts})
-
-
+    
+    return render(request, 'add_dish.html', {
+        "appetizers": appetizers,
+        "main_courses": main_courses,
+        "desserts": desserts
+    })
 
 def new_login(request):
-    form = NewLoginForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        username = form.cleaned_data.get("username")
-        password = form.cleaned_data.get("password")
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect("add/")
+    if request.method == "POST":
+        form = NewLoginForm(request.POST)
+        # if form.is_valid():
+            # username = form.cleaned_data.get("username")
+            # password = form.cleaned_data.get("password")
+        username = form.get("username")
+        password = form.get("password")
+        if username == "JamesBond" and password == "123":
+            print("username>>>>>", username , "\npassword>>>>>>", password )
+            return render(request, 'add_dish.html')
+            # user = authenticate(username=username, password=password)
+            # if user is not None:
+            #     login(request, user)
+                # return JsonResponse({"success": True, "redirect": "/add_dish/"})
+                # return redirect('add_dish')
         else:
-            form.add_error(None, "Invalid username or password")
-    return render(request, "index.html", {"form": form})
+            return JsonResponse({"success": False, "error": "Invalid username or password"})
+    return JsonResponse({"success": False, "error": "Invalid form data"})
+
+
+def register_user(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
     
-    # form = NewLoginForm(request, data=request.POST or None)
-    # if request.method == "POST" and form.is_valid():
-    #     username = form.cleaned_data.get("username")
-    #     password = form.cleaned_data.get("password")
-    #     user = authenticate(username=username, password=password)
-    #     if user is not None:
-    #         login(request, user)
-    #         return redirect("/add-dish")
-    #     else:
-    #         form.add_error(None, "Invalid username or password")
-    # return render(request, "index.html", {"form": form})
-    # form = NewLoginForm(request, data=request.POST or None)
-    # if request.method == "POST" and form.is_valid():
-    #     username = form.cleaned_data.get("username")
-    #     password = form.cleaned_data.get("password")
-    #     user = authenticate(username=username, password=password)
-    #     if user is not None:
-    #         login(request, user)
-    #         return redirect("/add-dish")
-    #     else:
-    #         form.add_error(None, "Invalid username or password")
 
-    # form = NewLoginForm(request, data=request.POST or None)
-    # if request.method == "POST" and form.is_valid():
-    #     username = form.cleaned_data.get("username")
-    #     password = form.cleaned_data.get("password")
-    #     user = authenticate(username=username, password=password)
-    #     if user is not None:
-    #         login(request, user)
-    #         return redirect("/add-dish")
-    #     else:
-    #         form.add_error(None, "Invalid username or password")
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists')
+            return redirect('register')
 
-    # form = NewLoginForm(request.POST or None)
-
-    # if request.method == "POST" and form.is_valid():
-    #     u = form.cleaned_data.get("username")
-    #     p = form.cleaned_data.get("password")
-    #     print("username----->", u)
-    #     print("password----->", p)
-
-    # form = NewLoginForm(request, data=request.POST)
-    # u = form.cleaned_data.get("username")
-    # p = form.cleaned_data.get("password")
-    # print("username----->", u)
-    # print("password----->", p)
+        user = User.objects.create_user(username=username, password=password, email=email)
+        user.save()
+        messages.success(request, 'User registered successfully')
+        return redirect('login')
+    
+    return render(request, 'register.html')

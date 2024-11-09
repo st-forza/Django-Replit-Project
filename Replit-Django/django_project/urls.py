@@ -1,13 +1,8 @@
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
+from myrestaurant import views
 
 urlpatterns = [
-    path("", include("myrestaurant.urls")),
-    path("", include("myrestaurant.urls")),
-    path("", include("myrestaurant.urls")),
-    path('admin/', admin.site.urls),
-    path('', include('myrestaurant.urls')),  # Root URL should point to myrestaurant.urls
+    path('', views.index, name='index'),
+    path('new_login/', views.new_login, name='new_login'),
+    path('add_dish/', views.add_dish, name='add_dish'),
 ]
-
-
-# python manage.py startapp myrestaurant
